@@ -5,7 +5,7 @@ Ekran::Ekran(QWidget *parent)
 {
     m_texture = QImage("Assets/Obrazek1.jpg");
     m_canvas = QImage(560, 640, QImage::Format_RGB32);
-    m_canvas.fill(255);
+    m_canvas.fill(0);
     m_temp = m_texture.copy();
 
     //setFixedWidth(1200);
@@ -408,7 +408,7 @@ void Ekran::drawCircle(QImage &img, const QPoint &first, float r)
 void Ekran::reset()
 {
     m_texture = m_temp.copy();
-    m_canvas.fill(255);
+    m_canvas.fill(0);
 
     update();
 }
