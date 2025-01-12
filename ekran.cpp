@@ -5,25 +5,23 @@ Ekran::Ekran(QWidget *parent)
 {
     m_texture = QImage("Assets/Obrazek1.jpg");
     m_canvas = QImage(560, 640, QImage::Format_RGB32);
-    m_canvas.fill(0);
+    m_canvas.fill(255);
     m_temp = m_texture.copy();
 
     //setFixedWidth(1200);
+    resize(800, 600);
     setupUI();
 }
 
 void Ekran::paintEvent(QPaintEvent *event)
 {
     QPainter p(this);
+   //p.setWindow(0, 0, width(), height());
 
-    if (!m_texture.isNull())
+    if (!m_texture.isNull() && !m_canvas.isNull())
     {
-        p.drawImage(m_leftPanel->geometry().topLeft(), m_texture);
-    }
-
-    if (!m_texture.isNull())
-    {
-        p.drawImage(m_rightPanel->geometry().topLeft(), m_canvas);
+        p.drawImage(QPoint(0,0), m_texture);
+        p.drawImage(QPoint(400, 0), m_canvas);
     }
 
 }
@@ -42,13 +40,14 @@ void Ekran::mouseReleaseEvent(QMouseEvent *event)
     if (event->button() == Qt::RightButton && m_isDrawing)
     {
 
-        QPoint point = event->pos() - m_rightPanel->geometry().topLeft();
-        m_canvasPoints[m_index] = point;
+        QPoint point = event->pos();
+        m_canvasPoints[m_index] = {point.x() - 400, point.y()};
         m_index++;
 
 
+        //qDebug() << "x bez odejmowania: " << point.x() << " y: " << point.y() << " szerokosc: " <<  m_canvas.width();
 
-        drawCircle(m_canvas, point, 3);
+        drawCircle(m_canvas, {point.x() - 400, point.y()}, 3);
 
         if (m_index == 3)
         {
@@ -56,8 +55,9 @@ void Ekran::mouseReleaseEvent(QMouseEvent *event)
 
             for (int i = 0; i < m_index - 1; i++)
             {
-                if (point.x() >= 0 && point.x() <= 560 + m_leftPanel->geometry().topLeft().x())
+                if (point.x() >= 400 && point.x() <= 1000)
                 {
+                    qDebug() << "Czy sie rysuje?";
                     drawLineBresenham(m_canvas, m_canvasPoints[i], m_canvasPoints[i + 1]);
                     drawLineBresenham(m_canvas, m_canvasPoints[2], m_canvasStartPoint);
                 }
@@ -71,14 +71,14 @@ void Ekran::mouseReleaseEvent(QMouseEvent *event)
     if (event->button() == Qt::LeftButton && m_isDrawing)
     {
 
-        QPoint point = event->pos() - m_leftPanel->geometry().topLeft();
+        QPoint point = event->pos();
         m_texturePoints[m_index] = point;
         m_index++;
 
         //QPoint point2 = event->pos();
 //
         //qDebug() << " x z odejmowaniem: " << point.x() << " y z odejmowaniem: " << point.y();
-        //qDebug() << "x bez odejmowania: " << point2.x() << " y: " << point2.y();
+        //qDebug() << "x bez odejmowania: " << point.x() << " y: " << point.y() << " indeks: " << m_index;
 
         drawCircle(m_texture, point, 3);
 
@@ -88,7 +88,7 @@ void Ekran::mouseReleaseEvent(QMouseEvent *event)
 
             for (int i = 0; i < m_index - 1; i++)
             {
-                if (point.x() >= 0 && point.x() <= 560 + m_leftPanel->geometry().topLeft().x())
+                if (point.x() >= 0 && point.x() <= 560)
                 {
                     drawLineBresenham(m_texture, m_texturePoints[i], m_texturePoints[i + 1]);
                     drawLineBresenham(m_texture, m_texturePoints[2], m_textureStartPoint);
@@ -106,22 +106,13 @@ void Ekran::setupUI()
 {
     m_mainLayout = new QVBoxLayout(this);
 
-    m_imgsLayout = new QHBoxLayout();
+    m_imgPanel = new QWidget(this);
+    m_imgPanel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    m_leftPanel = new QWidget(this);
-    m_rightPanel = new QWidget(this);
 
-    m_leftPanel->setFixedSize(560, 640);
-    m_rightPanel->setFixedSize(560, 640);
-
-    m_imgsLayout->addWidget(m_leftPanel, 0, Qt::AlignLeft);
-
-    m_spacer = new QSpacerItem(20, 640, QSizePolicy::Fixed, QSizePolicy::Expanding);
-    m_imgsLayout->addItem(m_spacer);
-
-    m_imgsLayout->addWidget(m_rightPanel, 0, Qt::AlignRight);
-
-    m_mainLayout->addLayout(m_imgsLayout);
+    m_imgLayout = new QVBoxLayout();
+    m_imgLayout->addWidget(m_imgPanel);
+    m_mainLayout->addLayout(m_imgLayout);
 
     m_spacer2 = new QSpacerItem(20, 20, QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_mainLayout->addItem(m_spacer2);
@@ -259,25 +250,23 @@ void Ekran::drawLineBresenham(QImage &img, const QPoint &first, const QPoint &se
 void Ekran::drawTriangle(const std::array<QPoint, 3> &points, const std::array<QPoint, 3>& texturePoints, InterpolationMode mode)
 {
 
-    qDebug() << "Cos sie stalo";
+    //qDebug() << "Cos sie stalo";
 
-    int x_a = points[0].x() + m_rightPanel->geometry().topLeft().x();
-    int y_a = points[0].y() + m_rightPanel->geometry().topLeft().y();
+    int x_a = points[0].x();
+    int y_a = points[0].y();
 
-    int x_b = points[1].x() + m_rightPanel->geometry().topLeft().x();
-    int y_b = points[1].y() + m_rightPanel->geometry().topLeft().y();
+    int x_b = points[1].x();
+    int y_b = points[1].y();
 
-    int x_c = points[2].x() + m_rightPanel->geometry().topLeft().x();
-    int y_c = points[2].y() + m_rightPanel->geometry().topLeft().y();
+    int x_c = points[2].x();
+    int y_c = points[2].y();
 
-    int x_a_t = texturePoints[0].x() + m_leftPanel->geometry().topLeft().x();
-    int y_a_t = texturePoints[0].y() + m_leftPanel->geometry().topLeft().y();
-
-    int x_b_t = texturePoints[1].x() + m_leftPanel->geometry().topLeft().x();
-    int y_b_t = texturePoints[1].y() + m_leftPanel->geometry().topLeft().y();
-
-    int x_c_t = texturePoints[2].x() + m_leftPanel->geometry().topLeft().x();
-    int y_c_t = texturePoints[2].y() + m_leftPanel->geometry().topLeft().y();
+    int x_a_t = texturePoints[0].x();
+    int y_a_t = texturePoints[0].y();
+    int x_b_t = texturePoints[1].x();
+    int y_b_t = texturePoints[1].y();
+    int x_c_t = texturePoints[2].x();
+    int y_c_t = texturePoints[2].y();
 
     int W = ((x_b - x_a) * (y_c - y_a)) - ((y_b - y_a) * (x_c - x_a));
 
@@ -290,9 +279,9 @@ void Ekran::drawTriangle(const std::array<QPoint, 3> &points, const std::array<Q
 
     PixelColor textureColor;
 
-    for (int y = min_y; y < max_y; y++)
+    for (int y = min_y; y <= max_y; y++)
     {
-        for (int x = min_x; x < max_x; x++)
+        for (int x = min_x; x <= max_x; x++)
         {
             int W_v = ((x - x_a) * (y_c - y_a)) - ((x_c - x_a) * (y - y_a));
             int W_w = ((x_b - x_a) * (y - y_a)) - ((x - x_a) * (y_b - y_a));
@@ -301,7 +290,7 @@ void Ekran::drawTriangle(const std::array<QPoint, 3> &points, const std::array<Q
             float w = W_w / (W * 1.0f);
             float u = 1 - v - w;
 
-            if ((u >= 0 && v >= 0 && w >= 0) && (u <= 1 && w <= 1 && v <= 1) && (u + v + w == 1))
+            if ((u >= 0 && v >= 0 && w >= 0) && (u <= 1 && v <= 1 && w <= 1))
             {
                 float canvasX = u * x_a + v * x_b + w * x_c;
                 float canvasY = u * y_a + v * y_b + w * y_c;
@@ -309,16 +298,21 @@ void Ekran::drawTriangle(const std::array<QPoint, 3> &points, const std::array<Q
                 float x_t = u * x_a_t + v * x_b_t + w * x_c_t;
                 float y_t = u * y_a_t + v * y_b_t + w * y_c_t;
 
+                if (x_t > m_texture.width() || y_t > m_texture.height())
+                    continue;
+
                 if (mode == InterpolationMode::ON)
                 {
-                    PixelColor P1 = getPixel(m_texture, std::floor(x_t - m_leftPanel->geometry().topLeft().x()),
-                                                        std::ceil(y_t - m_leftPanel->geometry().topLeft().y()));
-                    PixelColor P2 = getPixel(m_texture, std::ceil(x_t - m_leftPanel->geometry().topLeft().x()),
-                                                        std::ceil(y_t - m_leftPanel->geometry().topLeft().y()));
-                    PixelColor P3 = getPixel(m_texture, std::ceil(x_t - m_leftPanel->geometry().topLeft().x()),
-                                                        std::floor(y_t - m_leftPanel->geometry().topLeft().y()));
-                    PixelColor P4 = getPixel(m_texture, std::floor(x_t - m_leftPanel->geometry().topLeft().x()),
-                                                        std::floor(y_t - m_leftPanel->geometry().topLeft().y()));
+                    PixelColor P1 = getPixel(m_texture, std::floor(x_t),
+                                                        std::ceil(y_t));
+                    PixelColor P2 = getPixel(m_texture, std::ceil(x_t),
+                                                        std::ceil(y_t));
+                    PixelColor P3 = getPixel(m_texture, std::ceil(x_t),
+                                                        std::floor(y_t));
+                    PixelColor P4 = getPixel(m_texture, std::floor(x_t),
+                                                        std::floor(y_t));
+
+                    qDebug() << x_t << " " << y_t;
 
                     textureColor.R = y_t * ((1 - x_t) * P1.R + x_t * P2.R) + (1 - y_t) * ((1 - x_t) * P4.R + x_t * P3.R);
                     textureColor.G = y_t * ((1 - x_t) * P1.G + x_t * P2.G) + (1 - y_t) * ((1 - x_t) * P4.G + x_t * P3.G);
@@ -326,14 +320,18 @@ void Ekran::drawTriangle(const std::array<QPoint, 3> &points, const std::array<Q
                 }
                 else
                 {
-                    textureColor = getPixel(m_temp, x_t - m_leftPanel->geometry().topLeft().x(), y_t - m_leftPanel->geometry().topLeft().y());
+                    textureColor = getPixel(m_temp, x_t, y_t);
                 }
 
-                setPixel(m_canvas, canvasX- m_rightPanel->geometry().topLeft().x(), canvasY - m_rightPanel->geometry().topLeft().y(), textureColor);
+                setPixel(m_canvas, canvasX, canvasY, textureColor);
+            }
+            else
+            {
+                setPixel(m_canvas, x, y, PixelColor{255, 255, 0} );
             }
         }
     }
-    qDebug() << "Petla skonczona";
+    //qDebug() << "Petla skonczona";
     update();
 }
 
@@ -410,7 +408,7 @@ void Ekran::drawCircle(QImage &img, const QPoint &first, float r)
 void Ekran::reset()
 {
     m_texture = m_temp.copy();
-    m_canvas.fill(0);
+    m_canvas.fill(255);
 
     update();
 }

@@ -66,13 +66,12 @@ private:
 
 
     QVBoxLayout* m_mainLayout;
-    QHBoxLayout* m_imgsLayout;
     QHBoxLayout* m_buttonsLayout;
+    QVBoxLayout* m_imgLayout;
     QPushButton* m_resetButton;
     QCheckBox* m_interpolationCheckBox;
     QPushButton* m_textureButton;
-    QWidget* m_leftPanel;
-    QWidget* m_rightPanel;
+    QWidget* m_imgPanel;
     QSpacerItem* m_spacer;
     QSpacerItem* m_spacer2;
 
