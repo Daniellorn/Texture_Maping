@@ -8,7 +8,6 @@ Ekran::Ekran(QWidget *parent)
     m_canvas.fill(0);
     m_temp = m_texture.copy();
 
-    //setFixedWidth(1200);
     resize(800, 600);
     setupUI();
 }
@@ -16,14 +15,12 @@ Ekran::Ekran(QWidget *parent)
 void Ekran::paintEvent(QPaintEvent *event)
 {
     QPainter p(this);
-   //p.setWindow(0, 0, width(), height());
 
     if (!m_texture.isNull() && !m_canvas.isNull())
     {
         p.drawImage(QPoint(0,0), m_texture);
         p.drawImage(QPoint(400, 0), m_canvas);
     }
-
 }
 
 void Ekran::mousePressEvent(QMouseEvent *event)
@@ -45,8 +42,6 @@ void Ekran::mouseReleaseEvent(QMouseEvent *event)
         m_index++;
 
 
-        //qDebug() << "x bez odejmowania: " << point.x() << " y: " << point.y() << " szerokosc: " <<  m_canvas.width();
-
         drawCircle(m_canvas, {point.x() - 400, point.y()}, 3);
 
         if (m_index == 3)
@@ -57,7 +52,6 @@ void Ekran::mouseReleaseEvent(QMouseEvent *event)
             {
                 if (point.x() >= 400 && point.x() <= 1000)
                 {
-                    qDebug() << "Czy sie rysuje?";
                     drawLineBresenham(m_canvas, m_canvasPoints[i], m_canvasPoints[i + 1]);
                     drawLineBresenham(m_canvas, m_canvasPoints[2], m_canvasStartPoint);
                 }
@@ -74,11 +68,6 @@ void Ekran::mouseReleaseEvent(QMouseEvent *event)
         QPoint point = event->pos();
         m_texturePoints[m_index] = point;
         m_index++;
-
-        //QPoint point2 = event->pos();
-//
-        //qDebug() << " x z odejmowaniem: " << point.x() << " y z odejmowaniem: " << point.y();
-        //qDebug() << "x bez odejmowania: " << point.x() << " y: " << point.y() << " indeks: " << m_index;
 
         drawCircle(m_texture, point, 3);
 
@@ -250,7 +239,6 @@ void Ekran::drawLineBresenham(QImage &img, const QPoint &first, const QPoint &se
 void Ekran::drawTriangle(const std::array<QPoint, 3> &points, const std::array<QPoint, 3>& texturePoints, InterpolationMode mode)
 {
 
-    //qDebug() << "Cos sie stalo";
 
     int x_a = points[0].x();
     int y_a = points[0].y();
@@ -275,8 +263,6 @@ void Ekran::drawTriangle(const std::array<QPoint, 3> &points, const std::array<Q
     int min_x = std::min({x_a, x_b, x_c});
     int max_x = std::max({x_a, x_b, x_c});
 
-    //qDebug() << "Max x: " << max_x << " Max y: " << max_y << " Min x: " << min_x << " Min y: " << min_y;
-
     PixelColor textureColor;
 
     for (int y = min_y; y <= max_y; y++)
@@ -292,46 +278,37 @@ void Ekran::drawTriangle(const std::array<QPoint, 3> &points, const std::array<Q
 
             if ((u >= 0 && v >= 0 && w >= 0) && (u <= 1 && v <= 1 && w <= 1))
             {
-                float canvasX = u * x_a + v * x_b + w * x_c;
-                float canvasY = u * y_a + v * y_b + w * y_c;
 
                 float x_t = u * x_a_t + v * x_b_t + w * x_c_t;
                 float y_t = u * y_a_t + v * y_b_t + w * y_c_t;
 
-                if (x_t > m_texture.width() || y_t > m_texture.height())
-                    continue;
-
                 if (mode == InterpolationMode::ON)
                 {
-                    PixelColor P1 = getPixel(m_texture, std::floor(x_t),
+                    PixelColor P1 = getPixel(m_temp, std::floor(x_t),
                                                         std::ceil(y_t));
-                    PixelColor P2 = getPixel(m_texture, std::ceil(x_t),
+                    PixelColor P2 = getPixel(m_temp, std::ceil(x_t),
                                                         std::ceil(y_t));
-                    PixelColor P3 = getPixel(m_texture, std::ceil(x_t),
+                    PixelColor P3 = getPixel(m_temp, std::ceil(x_t),
                                                         std::floor(y_t));
-                    PixelColor P4 = getPixel(m_texture, std::floor(x_t),
+                    PixelColor P4 = getPixel(m_temp, std::floor(x_t),
                                                         std::floor(y_t));
 
-                    qDebug() << x_t << " " << y_t;
+                    float x_tt = x_t - std::floor(x_t);
+                    float y_tt = y_t - std::floor(y_t);
 
-                    textureColor.R = y_t * ((1 - x_t) * P1.R + x_t * P2.R) + (1 - y_t) * ((1 - x_t) * P4.R + x_t * P3.R);
-                    textureColor.G = y_t * ((1 - x_t) * P1.G + x_t * P2.G) + (1 - y_t) * ((1 - x_t) * P4.G + x_t * P3.G);
-                    textureColor.B = y_t * ((1 - x_t) * P1.B + x_t * P2.B) + (1 - y_t) * ((1 - x_t) * P4.B + x_t * P3.B);
+                    textureColor.R = y_tt * ((1 - x_tt) * P1.R + x_tt * P2.R) + (1 - y_tt) * ((1 - x_tt) * P4.R + x_tt * P3.R);
+                    textureColor.G = y_tt * ((1 - x_tt) * P1.G + x_tt * P2.G) + (1 - y_tt) * ((1 - x_tt) * P4.G + x_tt * P3.G);
+                    textureColor.B = y_tt * ((1 - x_tt) * P1.B + x_tt * P2.B) + (1 - y_tt) * ((1 - x_tt) * P4.B + x_tt * P3.B);
                 }
                 else
                 {
                     textureColor = getPixel(m_temp, x_t, y_t);
                 }
 
-                setPixel(m_canvas, canvasX, canvasY, textureColor);
-            }
-            else
-            {
-                setPixel(m_canvas, x, y, PixelColor{255, 255, 0} );
+                setPixel(m_canvas, x, y, textureColor);
             }
         }
     }
-    //qDebug() << "Petla skonczona";
     update();
 }
 
